@@ -99,10 +99,17 @@ methods: {
 | resultsProperty       | String                      |          |           | property api results are keyed under|
 | resultsValue          | String                      |          | 'id'      | property to use for the `value`|
 | resultsDisplay        | String\|Function            |          | 'name'    | property to use for the `display` or custom function|
+| resultsDisplayAfterSelect| String\|Function            |          | 'name'    | property to use for the `display` or custom function after item has selected|
 | requestHeaders        | Object                      |          |           | extra headers appended to the request|
 | showNoResults         | Boolean                     |          | true      | To show a message that no results were found|
 | clearButtonIcon       | String                      |          |           | Optionally provide an icon css class|
 | maxlength             | Number                      |          |           | Optional max input length|
+| searchFromBeginning   | Boolead                     |          | false     | Whether the string is searched for from the beginning (like%) or inside the (%like%) the word.|
+| minLegthForSearchBegin| Number                      |          | 0         | Minimum characters limit before the suggestions start (0 = start immediately after enter into control)|
+| maxResultItems        | Number                      |          |           | Maximum number of items in the search results|
+| moreResultsExistsText | String                      |          | (....)    | Text to show when the maximum number of items in result (`maxResultItems`) is reached|
+| allowOnlyValuesFromSource | Boolean                      |          | true    | Whether only values from `Source` are accepted |
+
 
 ## Available events
 

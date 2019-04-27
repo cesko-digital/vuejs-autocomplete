@@ -75,6 +75,7 @@ export default {
       type: [String, Function, Array, Object],
       required: true
     },
+
     /**
      * http method
      */
@@ -82,48 +83,56 @@ export default {
       type: String,
       default: 'get'
     },
+
     /**
      * Input placeholder
      */
     placeholder: {
       default: 'Search'
     },
+
     /**
      * Preset starting value
      */
     initialValue: {
       type: [String, Number]
     },
+
     /**
      * Preset starting display value
      */
     initialDisplay: {
       type: String
     },
+
     /**
      * CSS class for the surrounding input div
      */
     inputClass: {
       type: [String, Object]
     },
+
     /**
      * To disable the input
      */
     disableInput: {
       type: Boolean
     },
+
     /**
      * name property of the input holding the selected value
      */
     name: {
       type: String
     },
+
     /**
      * api - property of results array
      */
     resultsProperty: {
       type: String
     },
+
     /**
      * Results property used as the value
      */
@@ -131,10 +140,19 @@ export default {
       type: String,
       default: 'id'
     },
+
     /**
      * Results property used as the display
      */
     resultsDisplay: {
+      type: [String, Function],
+      default: 'name'
+    },
+
+    /**
+     * Results property used as the display after item has selected
+     */
+    resultsDisplayAfterItemSelected: {
       type: [String, Function],
       default: 'name'
     },
@@ -180,6 +198,45 @@ export default {
      */
     maxlength: {
       type: Number
+    },
+
+    /**
+     * Whether the string is searched for from the beginning (like%) or inside the (%like%)
+     */
+    searchFromBeginning: {
+      type: Boolean,
+      default: false
+    },
+
+    /**
+     * Minimum characters limit before the suggestions start (0 = start immediately after enter into control
+     */
+    minLegthForSearchBegin: {
+      type: Number,
+      default: 0
+    },
+
+    /**
+     * Maximum number of items in the search results (result limit)
+     */
+    maxResultItems: {
+      type: Number
+    },
+
+    /**
+     * Text to show when the maximum number of items in result (maxResultItems) is reached
+     */
+    moreResultsExistsText: {
+      type: String,
+      default: '(....)'
+    },
+
+    /**
+     * Whether only values from Source are accepted.
+     */
+    allowOnlyValuesFromSource: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -233,13 +290,16 @@ export default {
      */
     search () {
       this.selectedIndex = null
+      if (this.minLegthForSearchBegin > 0 && (!this.display || this.display.length < this.minLegthForSearchBegin)) {
+        this.results = []
+        return
+      }
       switch (true) {
         case typeof this.source === 'string':
           // No resource search with no input
           if (!this.display || this.display.length < 1) {
             return
           }
-
           return this.resourceSearch(this.source + this.display)
         case typeof this.source === 'function':
           // No resource search with no input
@@ -252,6 +312,21 @@ export default {
         default:
           throw new TypeError()
       }
+    },
+
+    /**
+     * trim results to maximum length (maxResultItems)
+     */
+    trimResults (resultsForTrim) {
+      if (typeof this.maxResultItems !== 'undefined' && this.maxResultItems !== null && resultsForTrim.length > this.maxResultItems) {
+        resultsForTrim = resultsForTrim.slice(0, this.maxResultItems)
+        if (typeof this.resultsDisplay === 'string') {
+          resultsForTrim.push()
+          resultsForTrim[resultsForTrim.length - 1][this.resultsDisplay] = this.moreResultsExistsText
+          resultsForTrim[resultsForTrim.length - 1][this.resultsValue] = null
+        }
+      }
+      return resultsForTrim
     },
 
     /**
@@ -360,13 +435,16 @@ export default {
       this.setEventListener()
       if (!this.display) {
         this.results = this.source
-        this.$emit('results', {results: this.results})
-        this.loading = false
-        return true
+      } else {
+        this.results = this.source.filter((item) => {
+          if (this.searchFromBeginning) {
+            return this.formatDisplay(item).toLowerCase().startsWith(this.display.toLowerCase())
+          } else {
+            return this.formatDisplay(item).toLowerCase().includes(this.display.toLowerCase())
+          }
+        })
       }
-      this.results = this.source.filter((item) => {
-        return this.formatDisplay(item).toLowerCase().includes(this.display.toLowerCase())
-      })
+      this.results = this.trimResults(this.results)
       this.$emit('results', {results: this.results})
       this.loading = false
     },
@@ -380,7 +458,7 @@ export default {
         return
       }
       this.value = (this.resultsValue && obj[this.resultsValue]) ? obj[this.resultsValue] : obj.id
-      this.display = this.formatDisplay(obj)
+      this.display = this.formatDisplayAfterSelect(obj)
       this.selectedDisplay = this.display
       this.$emit('selected', {
         value: this.value,
@@ -404,6 +482,24 @@ export default {
             throw new Error(`"${this.resultsDisplay}" property expected on result but is not defined.`)
           }
           return obj[this.resultsDisplay]
+        default:
+          throw new TypeError()
+      }
+    },
+
+    /**
+     * @param  {Object} obj
+     * @return {String}
+     */
+    formatDisplayAfterSelect (obj) {
+      switch (typeof this.resultsDisplayAfterItemSelected) {
+        case 'function':
+          return this.resultsDisplayAfterItemSelected(obj)
+        case 'string':
+          if (!obj[this.resultsDisplayAfterItemSelected]) {
+            throw new Error(`"${this.resultsDisplayAfterItemSelected}" property expected on result but is not defined.`)
+          }
+          return obj[this.resultsDisplayAfterItemSelected]
         default:
           throw new TypeError()
       }
@@ -481,11 +577,13 @@ export default {
      * Close the results list. If nothing was selected clear the search
      */
     close () {
-      if (!this.value || !this.selectedDisplay) {
-        this.clear()
-      }
-      if (this.selectedDisplay !== this.display && this.value) {
-        this.display = this.selectedDisplay
+      if (this.allowOnlyValuesFromSource === true) {
+        if (!this.value || !this.selectedDisplay) {
+          this.clear()
+        }
+        if (this.selectedDisplay !== this.display && this.value) {
+          this.display = this.selectedDisplay
+        }
       }
 
       this.results = null

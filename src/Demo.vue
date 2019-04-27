@@ -4,6 +4,44 @@
     <h1>Autocomplete Demo</h1>
 
     <div class="demo">
+      <h3>Object data source from Object - Czech cities with their postal codes</h3>
+      <p>If there are any preset values you can define them with <em>initialValue</em> and <em>initialDisplay</em> props</p>
+      <div class="example">
+        <h5>Example</h5>
+        <autocomplete
+          :source="demoData"
+          results-display="zip_name"
+          results-value="zip"
+          results-display-after-item-selected="zip"
+          @selected="setObjValue"
+          @clear="setObjValue({})"
+          :showNoResults=false
+          :searchFromBeginning=true
+          :minLegthForSearchBegin=0
+          :maxResultItems=10
+          >
+        </autocomplete>
+
+        <div class="results" v-if="objectResults">
+          <p>Results:</p>
+          <pre>{{ objectResults }}</pre>
+        </div>
+
+        <code>
+    &lt;autocomplete
+        :source="demoData"
+        results-display="zip_name"
+        results-value="zip"
+        results-display-after-item-selected="zip"
+        :searchFromBeginning=true
+        :minLegthForSearchBegin=2
+        :maxResultItems=10
+    &lt;/autocomplete&gt;
+        </code>
+      </div>
+    </div>
+
+    <div class="demo">
       <h3>Api data source (github api)</h3>
       <p>Using the <em>source</em> prop we can set an api endpoint for the autocomplete to hit.</p>
       <p>If results are returned under a specific key you can set that via <em>apiResultsProperty</em> key</p>
@@ -59,7 +97,6 @@
 
       </div>
     </div>
-
 
     <div class="demo">
       <h3>Object data source</h3>
@@ -204,6 +241,8 @@
 <script>
 import Autocomplete from './components/Autocomplete'
 
+import myDemoData from './assets/DemoData.json'
+
 export default {
   name: 'app',
   components: {
@@ -211,6 +250,7 @@ export default {
   },
   data () {
     return {
+      demoData: myDemoData,
       objectResults: null,
       apiResults: null,
       ask: null,

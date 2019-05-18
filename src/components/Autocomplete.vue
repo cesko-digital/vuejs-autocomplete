@@ -652,7 +652,7 @@ export default {
   padding 0 5px
   input
     width 100%
-    border 0
+    border 1px solid rgba(255,255,255,0.5)
     &:focus
       outline none
 
